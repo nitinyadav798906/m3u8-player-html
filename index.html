@@ -18,7 +18,7 @@
         margin-top: 1em;
         margin-bottom: 1em;
       }
-      input[type="text"] {width: 80%;}
+      input[type="text"] {width: 70%;}
       video {
         width: 80vw;
         height: calc(80vw * 0.5625);
@@ -34,10 +34,12 @@
       <label for="url">URL : </label>
       <input type="text" id="url" name="url" />
       <input type="button" id="load-button" value="Load" onclick="onClickLoad()" />
+      <input type="button" id="clear-button" value="Clear" onclick="onClickClear()" />
+      <input type="button" id="copy-button" value="Copy" onclick="onClickCopy()" />
     </div>
     <video id="video" controls>
     <script>
-      function onClickLoad(){
+      function onClickLoad() {
         const oldVideo = document.getElementById("video");
         if (oldVideo) {
           oldVideo.remove();
@@ -51,7 +53,7 @@
         const url = document.getElementById('url').value;
         const playerType = Array.from(document.getElementsByName("player-type")).filter(e => e.checked)[0].value
         if (playerType == "hls-js") {
-          if(!Hls.isSupported()) {
+          if (!Hls.isSupported()) {
             return;
           }
           const hls = new Hls();
@@ -60,6 +62,15 @@
         } else if (playerType == "safari") {
           document.getElementById('video').src = url;
         }
+      }
+
+      function onClickClear() {
+        document.getElementById('url').value = '';
+      }
+
+      function onClickCopy() {
+        document.getElementById('url').select();
+        document.execCommand("Copy");
       }
 
       const queryStrings = window.location.search.substring(1)
