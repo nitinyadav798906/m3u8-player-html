@@ -2,14 +2,26 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Smart Video Player</title>
+  <title>Ultimate Video Player</title>
+
+  <!-- Video.js Core -->
   <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
   <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+
+  <!-- DASH Support -->
+  <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/videojs-contrib-dash@2.11.0/dist/videojs-dash.min.js"></script>
+
+  <!-- HLS Quality Selector -->
   <script src="https://cdn.jsdelivr.net/npm/videojs-hls-quality-selector@1.1.3/dist/videojs-hls-quality-selector.min.js"></script>
+
+  <!-- YouTube Plugin -->
+  <script src="https://cdn.jsdelivr.net/npm/videojs-youtube@3.0.1/dist/Youtube.min.js"></script>
+
   <style>
     body {
-      background-color: #111;
-      color: white;
+      background: #121212;
+      color: #fff;
       font-family: Arial, sans-serif;
       text-align: center;
       padding: 20px;
@@ -17,77 +29,91 @@
     input[type="text"] {
       width: 60%;
       padding: 10px;
-      border-radius: 6px;
+      border-radius: 5px;
       border: none;
+      margin-bottom: 10px;
+    }
+    .buttons {
+      margin-bottom: 20px;
     }
     button {
       padding: 10px 16px;
-      margin-left: 10px;
       border: none;
       border-radius: 6px;
       background-color: #007bff;
       color: white;
       cursor: pointer;
+      margin-right: 10px;
+    }
+    button.clear {
+      background-color: #dc3545;
     }
     .video-container {
-      max-width: 800px;
+      max-width: 900px;
       margin: auto;
     }
   </style>
 </head>
 <body>
-  <h2>Smart Video Player</h2>
 
-  <div>
-    <input type="text" id="videoUrl" placeholder="Paste .m3u8 or .mp4 URL" />
-    <button onclick="loadVideo()">Play</button>
+  <h2>🔥 Ultimate Video Player 🔥</h2>
+
+  <div class="buttons">
+    <input type="text" id="videoUrl" placeholder="Paste .mp4, .m3u8, .mpd, or YouTube URL" />
+    <button onclick="loadVideo()">▶️ Play</button>
+    <button class="clear" onclick="clearUrl()">🧹 Clear</button>
   </div>
 
   <div class="video-container">
-    <video
-      id="myPlayer"
-      class="video-js vjs-default-skin vjs-big-play-centered"
-      controls
-      preload="auto"
-      width="800"
-      height="450"
-    ></video>
+    <video id="ultimatePlayer" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto" width="900" height="500"></video>
   </div>
 
   <script>
-    const player = videojs('myPlayer', {
-      techOrder: ['html5'],
-      controls: true,
+    const player = videojs('ultimatePlayer', {
+      techOrder: ['html5', 'youtube'],
       playbackRates: [0.5, 1, 1.25, 1.5, 2],
       responsive: true,
-      fluid: true
+      fluid: true,
+      youtube: { modestbranding: 1, rel: 0 }
     });
 
-    // Enable HLS Quality Selector
+    // Enable quality selector for HLS
     player.hlsQualitySelector({
       displayCurrentQuality: true
     });
 
+    function getTypeFromUrl(url) {
+      if (url.includes('youtube.com') || url.includes('youtu.be')) return 'video/youtube';
+      if (url.endsWith('.m3u8')) return 'application/x-mpegURL';
+      if (url.endsWith('.mpd')) return 'application/dash+xml';
+      if (url.endsWith('.mp4')) return 'video/mp4';
+      return '';
+    }
+
     function loadVideo() {
       const url = document.getElementById('videoUrl').value.trim();
       if (!url) {
-        alert("Enter a valid video URL");
+        alert("Please paste a video URL");
         return;
       }
 
-      const type = url.includes('.m3u8')
-        ? 'application/x-mpegURL'
-        : url.includes('.mpd')
-        ? 'application/dash+xml'
-        : 'video/mp4';
+      const type = getTypeFromUrl(url);
 
-      player.src({
-        src: url,
-        type: type
-      });
+      if (!type) {
+        alert("Unsupported format. Use .mp4, .m3u8, .mpd, or YouTube URL.");
+        return;
+      }
 
+      player.src({ src: url, type: type });
       player.play();
     }
+
+    function clearUrl() {
+      document.getElementById('videoUrl').value = '';
+      player.pause();
+      player.src({ src: '', type: 'video/mp4' });
+    }
   </script>
+
 </body>
 </html>
