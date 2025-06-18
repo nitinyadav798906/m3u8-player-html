@@ -1,70 +1,165 @@
-<!DOCTYPE html>
-<html>
+<!DOCTYPE html><html lang="en">
 <head>
-  <title>HLS Player with URL Params</title>
+  <meta charset="UTF-8">
+  <title>Ultimate Video Player</title>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dashjs/dist/dash.all.min.js"></script>
   <style>
     body {
-      background: #000;
+      background: #111;
       color: #fff;
+      font-family: sans-serif;
       text-align: center;
-      font-family: Arial;
       margin: 0;
       padding: 20px;
     }
     video {
-      width: 90vw;
+      width: 90%;
       max-width: 960px;
-      height: auto;
-      border-radius: 10px;
+      border-radius: 12px;
+      background: black;
+      margin-bottom: 10px;
+    }
+    .controls {
+      margin-top: 10px;
+    }
+    input[type="text"] {
+      width: 60%;
+      padding: 8px;
+      border-radius: 4px;
+      border: none;
+    }
+    button, select {
+      padding: 8px 12px;
+      margin: 5px;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+    }
+    .light-mode {
+      background: #f4f4f4;
+      color: #111;
     }
   </style>
 </head>
 <body>
-  <h2>🎬 M3U8 Player</h2>
-  <video id="video" controls></video>
+  <h2>Ultimate Advanced Video Player</h2>
+  <div class="controls">
+    <input type="text" id="url" placeholder="Paste video URL (m3u8, mp4, mpd, etc.)" />
+    <button onclick="loadVideo()">Play</button>
+    <button onclick="clearURL()">Clear</button>
+    <button onclick="copyURL()">Copy</button>
+    <button onclick="togglePlay()">Play/Pause</button>
+    <button onclick="backward()">⏪ 10s</button>
+    <button onclick="forward()">⏩ 10s</button>
+    <button onclick="toggleFullscreen()">Fullscreen</button>
+    <button onclick="toggleMute()">Mute</button>
+    <button onclick="downloadVideo()">Download</button>
+    <button onclick="toggleMode()">Light/Dark</button>
+    <select id="speed" onchange="changeSpeed()">
+      <option value="0.5">0.5x</option>
+      <option value="1" selected>1x</option>
+      <option value="1.25">1.25x</option>
+      <option value="1.5">1.5x</option>
+      <option value="2">2x</option>
+    </select>
+  </div><video id="video" controls></video>
 
   <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const videoUrl = urlParams.get("video");
-    const autostart = urlParams.get("autostart") === "1";
-    const fullscreen = urlParams.get("fullscreen") === "1";
-
+    const urlInput = document.getElementById("url");
     const video = document.getElementById("video");
+    let hls, dash;
 
-    function playVideo(url) {
-      if (Hls.isSupported()) {
-        const hls = new Hls();
-        hls.loadSource(url);
-        hls.attachMedia(video);
-        hls.on(Hls.Events.MANIFEST_PARSED, function () {
-          if (autostart) {
-            video.play();
-          }
-          if (fullscreen && video.requestFullscreen) {
-            video.requestFullscreen();
-          }
-        });
-      } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-        video.src = url;
-        video.addEventListener("loadedmetadata", function () {
-          if (autostart) {
-            video.play();
-          }
-          if (fullscreen && video.requestFullscreen) {
-            video.requestFullscreen();
-          }
-        });
+    function getParams() {
+      const params = new URLSearchParams(window.location.search);
+      return {
+        video: params.get("video"),
+        autostart: params.get("autostart") === "1",
+        fullscreen: params.get("fullscreen") === "1"
+      };
+    }
+
+    function loadVideo() {
+      const src = urlInput.value.trim();
+      if (!src) return alert("Enter a video URL");
+
+      if (hls) hls.destroy();
+      if (dash) dash.reset();
+      video.src = "";
+
+      if (src.endsWith(".m3u8")) {
+        if (Hls.isSupported()) {
+          hls = new Hls();
+          hls.loadSource(src);
+          hls.attachMedia(video);
+        } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+          video.src = src;
+        } else {
+          alert("HLS not supported.");
+        }
+      } else if (src.endsWith(".mpd")) {
+        dash = dashjs.MediaPlayer().create();
+        dash.initialize(video, src, true);
       } else {
-        alert("HLS is not supported in this browser.");
+        video.src = src;
       }
     }
 
-    if (videoUrl) {
-      playVideo(decodeURIComponent(videoUrl));
-    } else {
-      document.write("<p style='color:red;'>❌ No video URL provided. Use ?video=...</p>");
+    function clearURL() {
+      urlInput.value = "";
+      video.pause();
+      video.src = "";
     }
-  </script>
-</body>
+
+    function copyURL() {
+      urlInput.select();
+      document.execCommand("copy");
+      alert("URL copied!");
+    }
+
+    function togglePlay() {
+      if (video.paused) video.play();
+      else video.pause();
+    }
+
+    function forward() {
+      video.currentTime += 10;
+    }
+
+    function backward() {
+      video.currentTime -= 10;
+    }
+
+    function toggleFullscreen() {
+      if (video.requestFullscreen) video.requestFullscreen();
+    }
+
+    function toggleMute() {
+      video.muted = !video.muted;
+    }
+
+    function downloadVideo() {
+      const src = urlInput.value.trim();
+      if (src) window.open(src, '_blank');
+    }
+
+    function toggleMode() {
+      document.body.classList.toggle("light-mode");
+    }
+
+    function changeSpeed() {
+      const speed = document.getElementById("speed").value;
+      video.playbackRate = parseFloat(speed);
+    }
+
+    window.onload = () => {
+      const { video: v, autostart, fullscreen } = getParams();
+      if (v) {
+        urlInput.value = decodeURIComponent(v);
+        loadVideo();
+        if (autostart) video.play();
+        if (fullscreen) video.requestFullscreen();
+      }
+    };
+  </script></body>
 </html>
